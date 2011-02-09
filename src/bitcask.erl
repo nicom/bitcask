@@ -314,6 +314,23 @@ fold_keys(Ref, Fun, Acc0) ->
 -spec fold(reference(), fun((binary(), binary(), any()) -> any()), any()) -> any() | {error, any()}.
 fold(Ref, Fun, Acc0) ->
     State = get_state(Ref),
+    Self = self(),
+    WorkerPid = spawn_link(
+        fun() ->
+            Self ! try
+                        {fold_result, Ref, internal_fold(State, Fun, Acc0)}
+                   catch
+                        T:E -> {fold_error, Ref, T, E}
+                   end
+            end),           
+    receive
+       {fold_error, Ref, Type, Error} -> {fold_error, Type, Error};
+       {fold_result, Ref, Result} -> Result;
+       {'EXIT', WorkerPid, Reason} -> {fold_error, 'EXIT', Reason}
+    end.
+
+internal_fold(Ref, Fun, Acc0) ->
+    State = get_state(Ref),
 
     case open_fold_files(State#bc_state.dirname, 3) of
         {ok, Files} ->
