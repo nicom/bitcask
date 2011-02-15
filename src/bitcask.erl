@@ -315,18 +315,26 @@ fold_keys(Ref, Fun, Acc0) ->
 fold(Ref, Fun, Acc0) ->
     State = get_state(Ref),
     Self = self(),
+    FoldRef = make_ref(),
     WorkerPid = spawn_link(
         fun() ->
             Self ! try
-                        {fold_result, Ref, internal_fold(State, Fun, Acc0)}
+                        {fold_result, FoldRef, internal_fold(State, Fun, Acc0)}
                    catch
                         T:E -> {fold_error, Ref, T, E}
                    end
             end),           
     receive
-       {fold_error, Ref, Type, Error} -> {fold_error, Type, Error};
-       {fold_result, Ref, Result} -> Result;
-       {'EXIT', WorkerPid, Reason} -> {fold_error, 'EXIT', Reason}
+       {fold_result, FoldRef, Result} ->
+           Result;
+       {fold_error, FoldRef, Type, Error} ->
+           case Type of
+               throw -> throw(Error);
+               error -> erlang:errorError);
+               'EXIT' -> exit(Error)
+           end;
+       {'EXIT', WorkerPid, Reason} ->
+           exit(Reason)
     end.
 
 internal_fold(State, Fun, Acc0) ->
