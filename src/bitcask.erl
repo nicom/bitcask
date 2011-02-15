@@ -330,7 +330,7 @@ fold(Ref, Fun, Acc0) ->
        {fold_error, FoldRef, Type, Error} ->
            case Type of
                throw -> throw(Error);
-               error -> erlang:errorError);
+               error -> erlang:error(Error);
                'EXIT' -> exit(Error)
            end;
        {'EXIT', WorkerPid, Reason} ->
