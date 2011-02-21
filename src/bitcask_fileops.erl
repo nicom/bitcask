@@ -157,15 +157,20 @@ read(#filestate { fd = FD }, Offset, Size) ->
     case file:pread(FD, Offset, Size) of
         {ok, <<Crc32:?CRCSIZEFIELD/unsigned, Bytes/binary>>} ->
             %% Unpack the actual data
-            <<_Tstamp:?TSTAMPFIELD, KeySz:?KEYSIZEFIELD, ValueSz:?VALSIZEFIELD,
-             Key:KeySz/bytes, Value:ValueSz/bytes>> = Bytes,
+            try
+                <<_Tstamp:?TSTAMPFIELD, KeySz:?KEYSIZEFIELD, ValueSz:?VALSIZEFIELD,
+                 Key:KeySz/bytes, Value:ValueSz/bytes>> = Bytes,
 
-            %% Verify the CRC of the data
-            case erlang:crc32(Bytes) of
-                Crc32 ->
-                    {ok, Key, Value};
-                _BadCrc ->
-                    {error, bad_crc}
+                %% Verify the CRC of the data
+                case erlang:crc32(Bytes) of
+                    Crc32 ->
+                        {ok, Key, Value};
+                    _BadCrc ->
+                        {error, bad_crc}
+                end
+            catch
+                error:{badmatch, Bytes} ->
+                	{error, truncated_value}
             end;
         {error, Reason} ->
             {error, Reason};
