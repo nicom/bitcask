@@ -168,7 +168,9 @@ read(#filestate { fd = FD }, Offset, Size) ->
                     {error, bad_crc}
             end;
         {error, Reason} ->
-            {error, Reason}
+            {error, Reason};
+        eor ->
+        	{error, eof}
     end.
 
 %% @doc Call the OS's fsync(2) system call on the cask and hint files.

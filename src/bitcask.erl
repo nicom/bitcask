@@ -183,10 +183,13 @@ get(Ref, Key, TryNum) ->
                             case bitcask_fileops:read(Filestate,
                                                     E#bitcask_entry.offset,
                                                     E#bitcask_entry.total_sz) of
-                                {ok, _Key, ?TOMBSTONE} ->
+                                {ok, Key, ?TOMBSTONE} ->
                                     not_found;
-                                {ok, _Key, Value} ->
-                                    {ok, Value}
+                                {ok, Key, Value} ->
+                                    {ok, Value};
+                                 Error ->
+                                     error_logger:error_msg("Read error for entry key ~p: ", [Key, Error]),
+                                     not_found
                             end
                     end
             end
