@@ -169,7 +169,7 @@ read(#filestate { fd = FD }, Offset, Size) ->
             end;
         {error, Reason} ->
             {error, Reason};
-        eor ->
+        eof ->
         	{error, eof}
     end.
 
