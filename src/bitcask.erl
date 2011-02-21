@@ -188,7 +188,7 @@ get(Ref, Key, TryNum) ->
                                 {ok, Key, Value} ->
                                     {ok, Value};
                                  Error ->
-                                     error_logger:error_msg("Read error for entry key ~p: ", [Key, Error]),
+                                     error_logger:error_msg("Read error for entry key ~p: ~p", [Key, Error]),
                                      not_found
                             end
                     end
