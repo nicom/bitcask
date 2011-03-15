@@ -324,11 +324,13 @@ fold(Ref, Fun, Acc0) ->
             Self ! try
                         {fold_result, FoldRef, internal_fold(State, Fun, Acc0)}
                    catch
-                        T:E -> {fold_error, Ref, T, E}
-                   end
-            end),           
+                        T:E -> {fold_error, FoldRef, T, E}
+                   end,
+            unlink(Self)
+        end),
     receive
        {fold_result, FoldRef, Result} ->
+           unlink(WorkerPid),
            Result;
        {fold_error, FoldRef, Type, Error} ->
            case Type of
