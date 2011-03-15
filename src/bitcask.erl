@@ -344,10 +344,10 @@ internal_fold(State, Fun, Acc0) ->
     case open_fold_files(State#bc_state.dirname, 3) of
         {ok, Files} ->
             {_,_,Tseed} = now(),
-            {ok, Bloom} = ebloom:new(1000000,0.00003,Tseed), % arbitrary large bloom
+            KeyTable = ets:new(list_to_atom(State#bc_state.dirname), []),
             ExpiryTime = expiry_time(State#bc_state.opts),
             SubFun = fun(K,V,TStamp,{Offset,_Sz},Acc) ->
-                             case ebloom:contains(Bloom,K) orelse (TStamp < ExpiryTime) of
+                             case ets:member(KeyTable,{K}) orelse (TStamp < ExpiryTime) of
                                  true ->
                                      Acc;
                                  false ->
@@ -360,7 +360,7 @@ internal_fold(State, Fun, Acc0) ->
                                                  false ->
                                                      Acc;
                                                  true ->
-                                                     ebloom:insert(Bloom,K),
+                                                     ets:insert(KeyTable,{K}),
                                                      case V =:= ?TOMBSTONE of
                                                          true ->
                                                              Acc;
